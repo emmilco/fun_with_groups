@@ -1,3 +1,5 @@
+const chalk = require('chalk');
+
 class Group {
   constructor(set, map) {
     // the set should be a proper js Set,
@@ -5,7 +7,6 @@ class Group {
 
     this.set = set;
     this.map = map ? map : (a, b) => a.mult(b);
-    this.constructMultiplicationTable();
   }
 
   mult(a, b) {
@@ -17,17 +18,19 @@ class Group {
     this.set.forEach((a) => {
       const row = {};
       this.set.forEach((b) => {
-        row[b] = this.mult(a, b);
+        row[b.name] = this.mult(a, b);
       });
-      table[a] = row;
+      table[a.name] = row;
     });
     this.table = table;
   }
 
   displayTable() {
+    if (!this.table) this.constructMultiplicationTable();
     Object.values(this.table).forEach((row) => {
       let rowString = Object.values(row).reduce((acc, el) => {
-        if (el.name) return acc + el.name;
+        if (el.name) return acc + el.name.padEnd(4, ' ');
+        // if (el.name) return acc + chalk.bgHsl(Number(el.name) * (360 / this.set.size), 100, 50).bold(' ');
         return String(el);
       }, '');
 
@@ -87,26 +90,26 @@ class SymmetryAsMatrix extends Matrix {
     this.order = order;
     this.index = index;
     this.name = String(index);
-    this.factorials = { 0: 1, 1: 1 };
-    if (index >= this.factorial(order)) throw new Error(
-      'The requested symmetry exceeds the specified order.'
+    if (index >= SymmetryAsMatrix.factorial(order)) throw new Error(
+      `The requested symmetry (${index}) exceeds the specified order (${order}).`
     );
     this.calculatePermutation();
     this.generateMatrix();
   }
 
-  factorial(n) {
+  static factorial(n) {
+    if (!this.factorials) this.factorials = { 0: 1, 1: 1 };
     if (this.factorials[n]) {
       return this.factorials[n];
     }
-    const response = n * this.factorial(n - 1);
+    const response = n * SymmetryAsMatrix.factorial(n - 1);
     this.factorials[n] = response;
     return response;
   }
 
   calculatePermutation() {
     // This method uses a clever mechanism to convert an index to a
-    // particular permutation, by way of factoriadic numbers.
+    // particular permutation, by way of factoradic numbers.
     // Clear explanation found here: https://bit.ly/2T0haik
 
     let glyphs = '0123456789'.split('');
@@ -115,8 +118,8 @@ class SymmetryAsMatrix extends Matrix {
 
     let remainder = this.index;
     while (radix >= 0) {
-      factoriad += String(Math.floor(remainder / this.factorial(radix)));
-      remainder %= this.factorial(radix);
+      factoriad += String(Math.floor(remainder / SymmetryAsMatrix.factorial(radix)));
+      remainder %= SymmetryAsMatrix.factorial(radix);
       radix -= 1;
     }
     let sequence = [];
@@ -137,18 +140,25 @@ class SymmetryAsMatrix extends Matrix {
   }
 
   calculateIndex(matrix) {
-    // let result = 1;
-    // matrix.forEach((row, idx) => {
-    //   if (row.indexOf(1) > idx) {
-    //     result += (this.factorial(this.order - (idx + 1)) * (row.indexOf(1) - idx));
-    //   }
-    // });
-    // return result;
+    const sequence = matrix.map(row => row.indexOf(1));
+    let ordering = sequence.map((_, idx) => idx);
+    let factoriadDigits = [];
+    console.log(sequence, ordering, factoriadDigits);
+    sequence.forEach(el => {
+      const idx = ordering.indexOf(el);
+      factoriadDigits.push(idx);
+      ordering.splice(idx, 1);
+    });
+    let indexResult = 0;
+    factoriadDigits.forEach((el, idx) => {
+      indexResult += SymmetryAsMatrix.factorial(sequence.length - idx - 1) * el;
+    });
+    return indexResult;
   }
 
   mult(other) {
     const result = super.mult(other);
-    const newIndex = this.calculateIndex(result);
+    const newIndex = String(this.calculateIndex(result));
     return new SymmetryAsMatrix(this.order, newIndex);
   }
 }
@@ -156,10 +166,20 @@ class SymmetryAsMatrix extends Matrix {
 class SymmetricGroup extends Group {
   constructor(n) {
     const set = new Set();
-    for (let i = 1; i <= n; i++) {
+    for (let i = 0; i < (SymmetryAsMatrix.factorial(n)); i++) {
       set.add(new SymmetryAsMatrix(n, i));
     }
     super(set);
+  }
+
+  factorial(n) {
+    if (!this.factorials) this.factorials = { 0: 1, 1: 1 };
+    if (this.factorials[n]) {
+      return this.factorials[n];
+    }
+    const response = n * SymmetryAsMatrix.factorial(n - 1);
+    this.factorials[n] = response;
+    return response;
   }
 }
 

@@ -1,0 +1,22 @@
+{
+  "name": "fun_with_groups",
+  "version": "1.0.0",
+  "description": "",
+  "main": "group.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmilco/fun_with_groups.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emmilco/fun_with_groups/issues"
+  },
+  "homepage": "https://github.com/emmilco/fun_with_groups#readme",
+  "dependencies": {
+    "chalk": "^2.4.2"
+  }
+}
